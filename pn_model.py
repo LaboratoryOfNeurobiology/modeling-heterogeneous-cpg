@@ -1,3 +1,18 @@
+"""
+Apteronotus leptorhynchus pacemaker nucleus NEURON model
+
+Object-oriented library, including functionality for:
+- construction of NEURON objects for pacemaker cells,
+  relay cells, gap junctions, and voltage recorders
+- construction of random pacemaker nucleus networks,
+  calculation of their frequency metrics, and plotting
+- calling NEURON to simulate neural activity of these
+  networks for given (sets of) parameter combinations
+
+i.ilies@northeastern.edu
+last updated 2022-02-12
+"""
+
 from neuron import h
 from abc import ABC
 # arrays
@@ -562,6 +577,8 @@ class PacemakerNetwork():
             plt.savefig(f"{save_loc}/{save_tag} traces.pdf", format = 'pdf')
         plt.close()
 
+""" NETWORK STUDY FUNCTIONS """
+
 def network_func(pars = None, dt = 100, ns = 100, sh = 20):
     """ generates a Pn network with a given set of parameters,
     simulates it for the specified period, and returns various
@@ -737,31 +754,3 @@ def simulate(tstop, vini = -60, temp = 27):
     h.celsius = temp
     h.tstop = tstop
     h.run()
-
-""" NETWORK STRUCTURE STUDIES """
-
-if __name__ == "__main__":
-    
-    # meta-parameters: parallelized, output locale
-    parallel = True
-    tmp_path = "temp\\"
-    out_path = "..\\OneDrive - Northeastern University\\apteronotus\\"
-    out_file = "results"
-    # parameter names, min and max values, # steps
-    names = ['np', 'nr', 'npp', 'npr']
-    grids =  [[3, 200, 11], [2, 80, 9], [1, 13, 7], [1, 13, 7]]
-    # corresponding list of parameter combinations
-    nodes = param_space(*np.array(grids).transpose(), copies = 3,
-                        scale = ['log', 'log', 'linear', 'linear'])
-    # run simulation on all parameter combinations
-    freqs, syncs, times, metas = eval_params(names, nodes, parallel, tmp_path)
-    # assemble results variables into a data frame
-    results = pd.DataFrame(np.hstack((nodes, times, metas, syncs, freqs)),
-                           columns = names + ['time', 'dt', 'v0', 'sh', 'sso'] +
-                           [a + ' ' + b for a in ['net', 'pace', 'relay']
-                            for b in ['med', 'iqr', 'var', 'stable']])
-    # save combined data frame to csv file on disk
-    results.to_csv(out_path + out_file + ".csv")
-    # close main NEURON (if using ParallelContext)
-    if parallel:
-        h.quit()
